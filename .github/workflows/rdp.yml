@@ -9,8 +9,8 @@ jobs:
       - name: Download ngrok
         run: |
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
-          Expand-Archive ngrok.zip
-          ./ngrok.exe authtoken YOUR_AUTH_TOKEN
+          Expand-Archive -Path ngrok.zip -DestinationPath .
+          ./ngrok.exe authtoken 2z166gf1VETd612LiNZnxasSJeY_2Zah8JCvXC4fySuKizV42
 
       - name: Enable RDP
         run: |
@@ -18,4 +18,12 @@ jobs:
           net localgroup administrators kamel123 /add
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          ./ngrok.exe tcp 3389
+
+      - name: Start ngrok and Display RDP Address
+        shell: pwsh
+        run: |
+          Start-Process -FilePath "./ngrok.exe" -ArgumentList "tcp 3389" -NoNewWindow
+          Start-Sleep -Seconds 15
+          $response = Invoke-RestMethod -Uri http://127.0.0.1:4040/api/tunnels
+          $rdp = $response.tunnels[0].public_url
+          Write-Host "🔗 RDP address: $rdp"
