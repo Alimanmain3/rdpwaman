@@ -3,38 +3,19 @@ name: RDP
 on: [workflow_dispatch]
 
 jobs:
-  rdp-access:
+  build:
     runs-on: windows-latest
-
     steps:
       - name: Download ngrok
         run: |
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
-          Expand-Archive ngrok.zip -DestinationPath .
-          ./ngrok.exe authtoken 2z166gf1VETd612LiNZnxasSJeY_2Zah8JCvXC4fySuKizV42
+          Expand-Archive ngrok.zip
+          ./ngrok.exe authtoken YOUR_AUTH_TOKEN
 
-      - name: Enable RDP Access
+      - name: Enable RDP
         run: |
           net user kamel123 MyStrong123 /add
           net localgroup administrators kamel123 /add
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-
-      - name: Start ngrok and show public TCP address
-        shell: pwsh
-        run: |
-          Start-Process -FilePath "./ngrok.exe" -ArgumentList "tcp 3389" -NoNewWindow
-          Start-Sleep -Seconds 20
-          $maxAttempts = 5
-          $attempt = 0
-          do {
-            try {
-              $response = Invoke-RestMethod -Uri http://127.0.0.1:4040/api/tunnels
-              $rdp = $response.tunnels[0].public_url
-              Write-Host "🔗 RDP address (use in Remote Desktop): $rdp"
-              break
-            } catch {
-              Start-Sleep -Seconds 5
-              $attempt++
-            }
-          } while ($attempt -lt $maxAttempts)
+          ./ngrok.exe tcp 3389
